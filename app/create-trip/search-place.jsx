@@ -12,7 +12,9 @@ import { HfInference } from "@huggingface/inference";
 import { CreateTripContext } from "@/context/CreateTripContext";
 import { useNavigation, useRouter } from "expo-router";
 import axios from "axios";
-import LottieView from 'lottie-react-native';
+import LottieView from "lottie-react-native";
+import { getDoc, doc } from "firebase/firestore";
+import { db } from "@/configs/FirebaseConfig"; // فرض کنید که Firestore در این فایل پیکربندی شده است.
 
 const SearchPlace = () => {
   const { TripData, setTripData } = useContext(CreateTripContext);
@@ -26,6 +28,41 @@ const SearchPlace = () => {
   const navigation = useNavigation();
   const router = useRouter();
 
+  // دریافت کلیدهای API از Firestore
+  const fetchAPIKeysFromFirestore = async () => {
+    try {
+      const docRef = doc(db, "ApiHGF", "eorOBs1O6i7QVKt2hUxQ");
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        return docSnap.data();
+      } else {
+        console.error("No API keys document found!");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error fetching API keys:", error.message);
+      return null;
+    }
+  };
+
+  // ایجاد کلاینت HfInference با کلید API
+  const fetchHfInferenceClient = async () => {
+    try {
+      const apiKeys = await fetchAPIKeysFromFirestore();
+
+      if (!apiKeys || !apiKeys.apiHUB) {
+        console.error("Failed to fetch HfInference API key.");
+        return null;
+      }
+
+      return new HfInference(apiKeys.apiHUB);
+    } catch (error) {
+      console.error("Error setting up HfInference client:", error.message);
+      return null;
+    }
+  };
+
   const fetchLocationData = async () => {
     if (!inputLocation) {
       setError("Please enter a location.");
@@ -37,9 +74,14 @@ const SearchPlace = () => {
     setImages([]);
     setShowContinueButton(false);
 
-    const client = new HfInference("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");
-
     try {
+      const client = await fetchHfInferenceClient();
+
+      if (!client) {
+        setError("Failed to initialize HfInference client.");
+        return;
+      }
+
       const locationResponse = await client.chatCompletion({
         model: "Qwen/Qwen2.5-72B-Instruct",
         messages: [
@@ -80,7 +122,7 @@ const SearchPlace = () => {
           }));
           setShowContinueButton(true);
         } else {
-          setError("Couldn't parse the response correctly.");
+          setError("This area is being updated and will be added in the future.");
         }
       } else {
         setError("No details found for the location.");
@@ -95,28 +137,35 @@ const SearchPlace = () => {
   };
 
   const fetchImages = async (location) => {
-    const GOOGLE_API_KEY = "AIzaSyAJV6OyDRVLKYKwmmlvxc5bra0k7YSgIls";
-    const GOOGLE_CX = "d193796fe95604c83";
-  
     try {
-      const response = await axios.get(`https://www.googleapis.com/customsearch/v1`, {
-        params: {
-          key: GOOGLE_API_KEY,
-          cx: GOOGLE_CX,
-          q: location,
-          searchType: "image",
-          num: 5,
-        },
-      });
-  
+      const apiKeys = await fetchAPIKeysFromFirestore();
+
+      if (!apiKeys || !apiKeys.GOOGLE_API_KEY || !apiKeys.GOOGLE_CX) {
+        setError("Google API keys not found.");
+        return;
+      }
+
+      const response = await axios.get(
+        `https://www.googleapis.com/customsearch/v1`,
+        {
+          params: {
+            key: apiKeys.GOOGLE_API_KEY,
+            cx: apiKeys.GOOGLE_CX,
+            q: location,
+            searchType: "image",
+            num: 5,
+          },
+        }
+      );
+
       const imageResults = response.data.items?.map((item) => item.link) || [];
       setImages(imageResults);
-  
-      // فقط اولین عکس را به TripData اضافه کن
+
+      // ذخیره اولین عکس در TripData
       if (imageResults.length > 0) {
         setTripData((prevData) => ({
           ...prevData,
-          image: imageResults[0], // ذخیره اولین عکس
+          image: imageResults[0],
         }));
       }
     } catch (error) {
@@ -134,7 +183,7 @@ const SearchPlace = () => {
   useEffect(() => {
     console.log("TripData on render: ", TripData);
   }, [TripData]);
-  
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -149,7 +198,7 @@ const SearchPlace = () => {
 
       {loading && (
         <LottieView
-          source={require('@/assets/images/Animation - 1731955078972 (1).json')} // مسیر انیمیشن Lottie
+          source={require("@/assets/images/Animation - 1731955078972 (1).json")}
           autoPlay
           loop
           style={styles.animation}
@@ -177,7 +226,7 @@ const SearchPlace = () => {
       {showContinueButton && (
         <TouchableOpacity
           style={styles.continueButton}
-          onPress={() => router.push('/create-trip/select-traveler')}
+          onPress={() => router.push("/create-trip/select-traveler")}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
@@ -185,6 +234,7 @@ const SearchPlace = () => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -265,5 +315,6 @@ const styles = StyleSheet.create({
     fontFamily: "Outfit-Bold",
   },
 });
+
 
 export default SearchPlace;

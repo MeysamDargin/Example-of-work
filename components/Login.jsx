@@ -9,7 +9,7 @@ const Login = () => {
     <View>
       <Image style={{
         width:'100%',
-        height:500,
+        height:530,
       }} source={require('@/assets/images/1916750_258454-P55ZPH-322.jpg')} />
 
       <View style={styles.container}>
@@ -56,6 +56,6 @@ const styles = StyleSheet.create({
         padding:15,
         backgroundColor:Colors.Primary,
         borderRadius:99,
-        marginTop:'25%'
+        marginTop:60
     }
 })

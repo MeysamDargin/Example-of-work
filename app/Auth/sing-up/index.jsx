@@ -2,124 +2,112 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ToastAndroid } fro
 import React, { useEffect, useState } from "react";
 import { useNavigation, useRouter } from "expo-router";
 import { Colors } from "@/constants/Colors.ts";
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from '@/configs/FirebaseConfig'
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth } from "@/configs/FirebaseConfig";
 
 const SingUp = () => {
-  
   const [email, setEmail] = useState();
   const [password, setPassword] = useState();
-  const [Fullname, setFullname] = useState();
+  const [fullName, setFullName] = useState();
 
   const navigation = useNavigation();
-  const router= useRouter();
+  const router = useRouter();
+
   useEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
   }, []);
 
-  const OnCreateAccont = ()=> {
-    if (!email || !password || !Fullname) {
-      ToastAndroid.show('Please enter all details!', ToastAndroid.LONG);
+  const OnCreateAccount = () => {
+    if (!email || !password || !fullName) {
+      ToastAndroid.show("Please enter all details!", ToastAndroid.LONG);
       return;
     }
+
     createUserWithEmailAndPassword(auth, email, password)
-  .then((userCredential) => {
-    // Signed up 
-    const user = userCredential.user;
-    router.replace("/mytrip");
-    console.log(user);
-    // ...
-  })
-  .catch((error) => {
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    console.log(errorMessage, errorCode);
-    // ..
-  });
-  }
+      .then((userCredential) => {
+        // کاربر ثبت‌نام شد
+        const user = userCredential.user;
+
+        // به‌روزرسانی پروفایل کاربر
+        updateProfile(user, {
+          displayName: fullName,
+        })
+          .then(() => {
+            // نمایش موفقیت
+            console.log("Profile updated successfully:", user);
+            router.replace("/mytrip");
+          })
+          .catch((error) => {
+            console.error("Error updating profile:", error);
+          });
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.error(errorMessage, errorCode);
+        ToastAndroid.show("Error creating account. Please try again!", ToastAndroid.LONG);
+      });
+  };
+
   return (
     <View
       style={{
         padding: 25,
         paddingTop: 40,
-        backgroundColor:Colors.White,
-        height:'100%',
+        backgroundColor: Colors.White,
+        height: "100%",
       }}
     >
-      <TouchableOpacity onPress={()=> router.back()}>
+      <TouchableOpacity onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
       <Text
         style={{
           fontFamily: "Outfit-Bold",
           fontSize: 30,
-          marginTop:30
+          marginTop: 30,
         }}
       >
         Create New Account
       </Text>
 
       {/* Fullname */}
-
-      <View
-        style={{
-          marginTop: 50,
-        }}
-      >
-        <Text
-          style={{
-            fontFamily: "Outfit",
-          }}
-        >
-          Fullname
-        </Text>
-        <TextInput onChangeText={(value)=>setFullname(value)} style={styles.input} placeholder="Enter Fullname" />
+      <View style={{ marginTop: 50 }}>
+        <Text style={{ fontFamily: "Outfit" }}>Fullname</Text>
+        <TextInput
+          onChangeText={(value) => setFullName(value)}
+          style={styles.input}
+          placeholder="Enter Fullname"
+        />
       </View>
+
       {/* Email */}
-
-      <View
-        style={{
-          marginTop: 20,
-        }}
-      >
-        <Text
-          style={{
-            fontFamily: "Outfit",
-          }}
-        >
-          Email
-        </Text>
-        <TextInput onChangeText={(value)=>setEmail(value)} style={styles.input} placeholder="Enter Email" />
+      <View style={{ marginTop: 20 }}>
+        <Text style={{ fontFamily: "Outfit" }}>Email</Text>
+        <TextInput
+          onChangeText={(value) => setEmail(value)}
+          style={styles.input}
+          placeholder="Enter Email"
+        />
       </View>
 
-      {/* password */}
-
-      <View
-        style={{
-          marginTop: 20,
-        }}
-      >
-        <Text
-          style={{
-            fontFamily: "Outfit",
-          }}
-        >
-          password
-        </Text>
+      {/* Password */}
+      <View style={{ marginTop: 20 }}>
+        <Text style={{ fontFamily: "Outfit" }}>Password</Text>
         <TextInput
           secureTextEntry={true}
           style={styles.input}
-          onChangeText={(value)=>setPassword(value)}
-          placeholder="Enter password"
+          onChangeText={(value) => setPassword(value)}
+          placeholder="Enter Password"
         />
       </View>
-      {/* Create Account */}
 
+      {/* Create Account */}
       <TouchableOpacity
-      onPress={OnCreateAccont}
+        onPress={OnCreateAccount}
         style={{
           padding: 20,
           backgroundColor: Colors.Primary,
@@ -139,8 +127,7 @@ const SingUp = () => {
         </Text>
       </TouchableOpacity>
 
-      {/* Sing In */}
-
+      {/* Sign In */}
       <TouchableOpacity
         onPress={() => router.replace("Auth/sing-in")}
         style={{
@@ -159,7 +146,7 @@ const SingUp = () => {
             textAlign: "center",
           }}
         >
-          Sing In
+          Sign In
         </Text>
       </TouchableOpacity>
     </View>

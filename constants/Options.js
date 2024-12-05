@@ -49,4 +49,4 @@ export const SelectBudgetList=[
     },
 ]
 
-export const AI_PROMPT = "ایجاد برنامه سفر به زبان فارسی برای مکان: {location}، برای {totalDay} روز و {totalNight} شب برای {traveler} با بودجه {Budget} با جزئیات پرواز، قیمت پرواز با URL رزرو، لیست گزینه‌های هتل با نام هتل، آدرس هتل، قیمت، نشانی اینترنتی تصویر هتل، مختصات جغرافیایی، رتبه‌بندی، توضیحات و مکان‌های دیدنی نزدیک با نام مکان، جزئیات مکان، نشانی اینترنتی تصویر مکان، جغرافیا مختصات، قیمت بلیط، زمان سفر به هر مکان برای 1 روز و 1 شب با برنامه هر روز با بهترین زمان برای بازدید در JSON."
+export const AI_PROMPT = "Create an itinerary for location: {location}, for {totalDay} days and {totalNight} nights for {traveler} with budget {Budget} with flight details, flight price with booking URL, list of hotel options with hotel name, hotel address, price, hotel image URL, geo coordinates, rating, description and nearby attractions with location name, location details, location image URL, geo coordinates, ticket price, travel time to each location for 1 day and 1 night with each day's itinerary with best time to visit in JSON."

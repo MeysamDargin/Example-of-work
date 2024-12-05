@@ -6,17 +6,21 @@ import StartNewTripCard from "@/components/MyTrips/StartNewTripCard";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db, auth } from "@/configs/FirebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import LottieView from 'lottie-react-native';
+import LottieView from "lottie-react-native";
 import UserTripList from "../../components/MyTrips/UserTripList";
-import { useRouter } from "expo-router";
-
+import { Redirect, useRouter } from "expo-router";
+import * as Updates from "expo-updates";
 
 const MyTrip = () => {
   const [user, setUser] = useState(null);
   const [userTrips, setUserTrips] = useState([]);
   const [loadingUser, setLoadingUser] = useState(true); // For user authentication state
   const [loadingTrips, setLoadingTrips] = useState(false); // For trips data loading
+  const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(0); // Percent progress of update download
   const router = useRouter();
+
   // Check user authentication state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -25,6 +29,23 @@ const MyTrip = () => {
     });
 
     return () => unsubscribe(); // Clean up the listener on unmount
+  }, []);
+
+  // Check for updates when the component mounts
+  useEffect(() => {
+    async function checkForUpdates() {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+
+        if (update.isAvailable) {
+          setIsUpdateAvailable(true);
+        }
+      } catch (error) {
+        console.error("Error checking for update:", error);
+      }
+    }
+
+    checkForUpdates(); // Check for update on component mount
   }, []);
 
   // Fetch trips when user is authenticated
@@ -57,78 +78,117 @@ const MyTrip = () => {
     }
   };
 
+  // Handle update download and reload
+  const handleUpdate = async () => {
+    if (!isUpdateAvailable) return;
+
+    try {
+      setIsUpdating(true);
+
+      // Download the update
+      await Updates.fetchUpdateAsync({
+        onDownloadProgress: (progress) => {
+          setUpdateProgress(Math.round((progress.totalBytesWritten / progress.totalBytesExpectedToWrite) * 100));
+        },
+      });
+
+      // Reload the app after downloading the update
+      await Updates.reloadAsync();
+    } catch (error) {
+      console.error("Error during update:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <ScrollView
-    showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={false}
       style={{
-        padding: 25,
-        paddingTop: 25,
         backgroundColor: Colors.White,
         height: "100%",
       }}
     >
-      {/* Header */}
-      <View
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          margin: 1,
-          justifyContent: "space-between",
+          padding: 25,
+          paddingTop: 25,
+          backgroundColor: Colors.White,
+          height: "100%",
         }}
       >
-        <Text
+        {/* Header */}
+        <View
           style={{
-            fontFamily: "Outfit-Bold",
-            fontSize: 35,
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            margin: 1,
+            justifyContent: "space-between",
           }}
         >
-          My Trips
-        </Text>
-        <TouchableOpacity onPress={()=> router.push('/create-trip/search-place')}>
-        <Ionicons name="add-circle" size={50} color="black" />
-        </TouchableOpacity>
-      </View>
+          <Text
+            style={{
+              fontFamily: "Outfit-Bold",
+              fontSize: 35,
+            }}
+          >
+            My Trips
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push("/create-trip/search-place")}
+          >
+            <Ionicons name="add-circle" size={50} color="black" />
+          </TouchableOpacity>
+        </View>
 
-      {/* Content */}
-      {loadingUser ? (
-        <Text>Checking user authentication...</Text>
-      ) : !user ? (
-        <Text>User not logged in. Please log in to see your trips.</Text>
-      ) : loadingTrips ? (
-        <View style={{alignItems:"center",marginTop:'50%'}}><LottieView
-        source={require('@/assets/images/awf.json')} // مسیر انیمیشن Lottie
-        autoPlay
-        loop
-        style={{width: 90,
-          height: 90,}}
-      /></View>
-      ) : userTrips.length === 3 ? (
-        <StartNewTripCard />
-      ) : (
-        <View>
-          {/* <View style={{display:"flex",flexDirection:"row",paddingTop:20,marginLeft:-10,
-        alignItems:"center"}}>
+        {/* Content */}
+        {loadingUser ? (
+          <Text style={{fontFamily:"Outfit-Bold"}}>Checking user authentication...</Text>
+        ) : !user ? (
+          <Redirect href="/" />
+        ) : loadingTrips ? (
+          <View style={{ alignItems: "center", marginTop: "50%" }}>
             <LottieView
-          source={require('@/assets/images/sefsfe.json')} // مسیر انیمیشن Lottie
-          autoPlay
-          loop
-          style={{width: 50,
-            height: 50,}}
-        /><Text style={{
-          fontSize:20,
-          fontFamily:"Outfit-Bold",
-          paddingTop:15
-        }}>Trips: {userTrips.length}</Text>
-          </View> */}
-          
+              source={require("@/assets/images/awf.json")} // مسیر انیمیشن Lottie
+              autoPlay
+              loop
+              style={{ width: 90, height: 90 }}
+            />
+          </View>
+        ) : userTrips.length === 0 ? (
+          <StartNewTripCard />
+        ) : (
           <View>
             <UserTripList userTrips={userTrips} />
           </View>
-        </View>
-        
-        
-      )}
+        )}
+
+        {/* Update Section */}
+        {isUpdateAvailable && !isUpdating ? (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Text style={{fontFamily:"Outfit-Bold"}}>New update available!</Text>
+            <TouchableOpacity onPress={handleUpdate}>
+              <View
+                style={{
+                  backgroundColor: Colors.Primary,
+                  padding: 10,
+                  borderRadius: 5,
+                  marginTop: 10,
+                }}
+              >
+                <Text style={{ color: Colors.White, fontFamily:"Outfit-Bold" }}>Download Update</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        ) : isUpdating ? (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Text style={{fontFamily:"Outfit-Bold"}}>Downloading update...</Text>
+            <Text>{updateProgress}%</Text>
+          </View>
+        ) : null}
+      </ScrollView>
     </ScrollView>
   );
 };

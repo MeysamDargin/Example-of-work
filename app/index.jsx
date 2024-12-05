@@ -1,50 +1,50 @@
-import { View, Text } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Login from '@/components/Login';
+import { View, Text } from "react-native";
+import React, { useEffect, useState } from "react";
+import Login from "@/components/Login";
 import { auth } from "@/configs/FirebaseConfig";
 import { Redirect } from "expo-router";
+import LottieView from "lottie-react-native";
 
 const Index = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkUserSession = async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        } else {
-          const unsubscribe = auth.onAuthStateChanged((authUser) => {
-            if (authUser) {
-              AsyncStorage.setItem('user', JSON.stringify(authUser));
-              setUser(authUser);
-            }
-            setLoading(false);
-          });
-          return () => unsubscribe();
-        }
-        setLoading(false);
-      } catch (error) {
-        console.error("Error checking user session:", error);
-        setLoading(false);
+    // Listen to Firebase authentication state changes
+    const unsubscribe = auth.onAuthStateChanged((authUser) => {
+      if (authUser) {
+        setUser(authUser);
+      } else {
+        setUser(null);
       }
-    };
+      setLoading(false); // Stop the loading spinner
+    });
 
-    checkUserSession();
+    return () => unsubscribe(); // Cleanup listener
   }, []);
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('user');
-    auth.signOut();
-    setUser(null);
+    try {
+      await auth.signOut(); // Sign out from Firebase
+      setUser(null); // Reset user state
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
 
   if (loading) {
     return (
-      <View>
-        <Text>Loading...</Text>
+      <View style={{
+        alignItems:"center",
+        justifyContent:"center",
+        marginTop:"80%"
+      }}>
+        <LottieView
+          source={require("@/assets/images/lod.json")}
+          autoPlay
+          loop
+          style={{ width: 90, height: 90 }}
+        />
       </View>
     );
   }
@@ -53,13 +53,13 @@ const Index = () => {
     <View>
       {user ? (
         <>
-          <Redirect href={'/mytrip'} />
+          <Redirect href={"/mytrip"} />
         </>
       ) : (
         <Login />
       )}
     </View>
   );
-}
+};
 
 export default Index;
