@@ -37,6 +37,18 @@ const TabLayout = () => {
       />
       <Tabs.Screen
         options={{
+          tabBarLabel: "Flights",
+          tabBarIcon: ({ color }) => (
+            <Image
+              style={{ width: 33, height: 33 }}
+              source={require("@/assets/images/plane.png")}
+            />
+          ),
+        }}
+        name="flights"
+      />
+      <Tabs.Screen
+        options={{
           tabBarLabel: "Profile",
           tabBarIcon: () => (
             <FontAwesome6 name="circle-user" size={24} color={"#000"} />
