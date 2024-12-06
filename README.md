@@ -2,6 +2,11 @@
 
 Nova AI is a next-gen travel planning app designed to simplify and enhance your travel experience. By leveraging cutting-edge Artificial Intelligence, Nova AI helps users create personalized travel itineraries, find the best destinations, and plan their entire trip seamlessly. The app also features an advanced chatbot powered by AI to provide real-time support and recommendations.
 
+### Demo Application
+![download app](assets/images/Capturefsd.PNG)
+download link:
+https://expo.dev/accounts/meysamalizadeh/projects/Nova/builds/524c55cb-d7f8-495c-86eb-bb8a0dae7eb1
+
 ## Features
 
 - **AI-Powered Travel Planner**: Create personalized travel plans based on your preferences, budget, and interests.
