@@ -4,6 +4,7 @@ Nova AI is a next-gen travel planning app designed to simplify and enhance your 
 
 ### Demo Application
 ![download app](assets/images/Capturefsd.PNG)
+
 download link:
 https://expo.dev/accounts/meysamalizadeh/projects/Nova/builds/524c55cb-d7f8-495c-86eb-bb8a0dae7eb1
 
